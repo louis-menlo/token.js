@@ -32,6 +32,7 @@ const callLLM = async () => {
 const callOpenAI = async () => {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true,
   })
 
   const result = await openai.chat.completions.create({

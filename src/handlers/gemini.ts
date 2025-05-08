@@ -145,7 +145,7 @@ export const convertAssistantMessage = (
       })
     : []
 
-  if (message.content !== null) {
+  if (message.content && message.content.length) {
     parts.push({
       text: message.content,
     })
@@ -169,9 +169,10 @@ export const convertMessageToContent = async (
           {
             functionResponse: {
               name: message.tool_call_id,
-              response: JSON.parse(
-                convertMessageContentToString(message.content)
-              ),
+              response: {
+                type: 'text',
+                text: convertMessageContentToString(message.content),
+              },
             },
           },
         ],

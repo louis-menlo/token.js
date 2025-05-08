@@ -38,6 +38,7 @@ export class GroqHandler extends BaseHandler<GroqModel> {
     const client = new OpenAI({
       apiKey,
       baseURL: 'https://api.groq.com/openai/v1',
+      dangerouslyAllowBrowser: true,
     })
 
     if (apiKey === undefined) {

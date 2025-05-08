@@ -30,6 +30,7 @@ export class OpenRouterHandler extends BaseHandler<OpenRouterModel> {
         'HTTP-Referer': 'docs.tokenjs.ai',
         'X-Title': 'Token.js',
       },
+      dangerouslyAllowBrowser: true,
     })
 
     if (apiKey === undefined) {

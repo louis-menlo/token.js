@@ -22,6 +22,25 @@ const build = async () => {
         'openai',
       ],
     }),
+    esbuild.build({
+      entryPoints: ['src/index.ts'],
+      bundle: true,
+      minify: true,
+      format: 'esm',
+      outfile: `./dist/index.mjs`,
+      platform: 'browser',
+      treeShaking: true,
+      tsconfig: 'tsconfig.json',
+      external: [
+        '@anthropic-ai/sdk',
+        '@aws-sdk/client-bedrock-runtime',
+        '@google/generative-ai',
+        'chalk',
+        'cohere-ai',
+        'mime-types',
+        'openai',
+      ],
+    }),
   ])
 }
 

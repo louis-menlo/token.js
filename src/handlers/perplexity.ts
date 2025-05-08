@@ -36,6 +36,7 @@ export class PerplexityHandler extends BaseHandler<PerplexityModel> {
       ...this.opts,
       baseURL: 'https://api.perplexity.ai',
       apiKey,
+      dangerouslyAllowBrowser: true,
     })
 
     const model = body.model.replace(PERPLEXITY_PREFIX, '')
