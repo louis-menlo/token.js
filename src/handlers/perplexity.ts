@@ -1,7 +1,11 @@
 import OpenAI from 'openai'
 import { Stream } from 'openai/streaming'
 
-import { PerplexityModel, ProviderCompletionParams } from '../chat/index.js'
+import {
+  PerplexityModel,
+  ProviderCompletionParams,
+  RequestOptions,
+} from '../chat/index.js'
 import {
   CompletionResponse,
   StreamCompletionResponse,
@@ -21,7 +25,8 @@ async function* streamPerplexity(
 
 export class PerplexityHandler extends BaseHandler<PerplexityModel> {
   async create(
-    body: ProviderCompletionParams<'perplexity'>
+    body: ProviderCompletionParams<'perplexity'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
     const apiKey = this.opts.apiKey ?? process.env.PERPLEXITY_API_KEY
@@ -45,17 +50,17 @@ export class PerplexityHandler extends BaseHandler<PerplexityModel> {
     const temperature =
       body.temperature === 2 ? 2 - Number.EPSILON : body.temperature
 
-    const options = {
+    const request = {
       ...body,
       model,
       temperature,
     }
 
-    if (options.stream) {
-      const stream = await openai.chat.completions.create(options)
+    if (request.stream) {
+      const stream = await openai.chat.completions.create(request, options)
       return streamPerplexity(stream)
     } else {
-      return openai.chat.completions.create(options)
+      return openai.chat.completions.create(request, options)
     }
   }
 }

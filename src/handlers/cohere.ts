@@ -21,6 +21,7 @@ import {
   CohereModel,
   CompletionParams,
   ProviderCompletionParams,
+  RequestOptions,
 } from '../chat/index.js'
 import {
   CompletionResponse,
@@ -498,7 +499,8 @@ async function* createCompletionResponseStreaming(
 
 export class CohereHandler extends BaseHandler<CohereModel> {
   async create(
-    body: ProviderCompletionParams<'cohere'>
+    body: ProviderCompletionParams<'cohere'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
 
@@ -547,11 +549,13 @@ export class CohereHandler extends BaseHandler<CohereModel> {
 
     if (body.stream === true) {
       const created = getTimestamp()
-      const response = await cohere.chatStream(input)
+      const response = await cohere.chatStream(input, {
+        abortSignal: options.signal,
+      })
       return createCompletionResponseStreaming(response, body.model, created)
     } else {
       const created = getTimestamp()
-      const response = await cohere.chat(input)
+      const response = await cohere.chat(input, { abortSignal: options.signal })
 
       const toolCalls: Array<ChatCompletionMessageToolCall> | undefined =
         response.toolCalls?.map((toolCall) => {

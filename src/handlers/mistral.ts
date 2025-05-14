@@ -19,6 +19,7 @@ import {
   CompletionParams,
   MistralModel,
   ProviderCompletionParams,
+  RequestOptions,
 } from '../chat/index.js'
 import {
   CompletionResponse,
@@ -255,7 +256,8 @@ const toCompletionResponse = (
 
 export class MistralHandler extends BaseHandler<MistralModel> {
   async create(
-    body: ProviderCompletionParams<'mistral'>
+    body: ProviderCompletionParams<'mistral'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
 
@@ -290,7 +292,7 @@ export class MistralHandler extends BaseHandler<MistralModel> {
 
     const messages = convertMessages(body.messages)
 
-    const options: ChatRequest = {
+    const request: ChatRequest = {
       model: body.model,
       messages: messages as Message[],
       temperature,
@@ -303,10 +305,10 @@ export class MistralHandler extends BaseHandler<MistralModel> {
     }
 
     if (body.stream) {
-      const chatResponseStream = client.chatStream(options)
+      const chatResponseStream = client.chatStream(request, options)
       return toStreamResponse(chatResponseStream)
     } else {
-      const chatResponse = await client.chat(options)
+      const chatResponse = await client.chat(request, options)
       return toCompletionResponse(chatResponse)
     }
   }

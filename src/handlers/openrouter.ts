@@ -1,6 +1,10 @@
 import OpenAI from 'openai'
 
-import { OpenRouterModel, ProviderCompletionParams } from '../chat/index.js'
+import {
+  OpenRouterModel,
+  ProviderCompletionParams,
+  RequestOptions,
+} from '../chat/index.js'
 import {
   CompletionResponse,
   StreamCompletionResponse,
@@ -16,7 +20,8 @@ export class OpenRouterHandler extends BaseHandler<OpenRouterModel> {
   }
 
   async create(
-    body: ProviderCompletionParams<'openrouter'>
+    body: ProviderCompletionParams<'openrouter'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
 
@@ -39,6 +44,6 @@ export class OpenRouterHandler extends BaseHandler<OpenRouterModel> {
       )
     }
 
-    return client.chat.completions.create(body)
+    return client.chat.completions.create(body, options)
   }
 }

@@ -18,6 +18,7 @@ import {
   AnthropicModel,
   CompletionParams,
   ProviderCompletionParams,
+  RequestOptions,
 } from '../chat/index.js'
 import {
   CompletionResponse,
@@ -546,7 +547,8 @@ export class AnthropicHandler extends BaseHandler<AnthropicModel> {
   }
 
   async create(
-    body: ProviderCompletionParams<'anthropic'>
+    body: ProviderCompletionParams<'anthropic'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
 
@@ -593,7 +595,7 @@ export class AnthropicHandler extends BaseHandler<AnthropicModel> {
         tool_choice: toolChoice,
       }
       const created = getTimestamp()
-      const response = client.messages.stream(convertedBody)
+      const response = client.messages.stream(convertedBody, options)
 
       return createCompletionResponseStreaming(response, created)
     } else {
@@ -610,7 +612,7 @@ export class AnthropicHandler extends BaseHandler<AnthropicModel> {
       }
 
       const created = getTimestamp()
-      const response = await client.messages.create(convertedBody)
+      const response = await client.messages.create(convertedBody, options)
       return createCompletionResponseNonStreaming(
         response,
         created,

@@ -1,6 +1,10 @@
 import OpenAI from 'openai'
 
-import { GroqModel, ProviderCompletionParams } from '../chat/index.js'
+import {
+  GroqModel,
+  ProviderCompletionParams,
+  RequestOptions,
+} from '../chat/index.js'
 import {
   CompletionResponse,
   StreamCompletionResponse,
@@ -30,7 +34,8 @@ export class GroqHandler extends BaseHandler<GroqModel> {
   }
 
   async create(
-    body: ProviderCompletionParams<'groq'>
+    body: ProviderCompletionParams<'groq'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
 
@@ -47,6 +52,6 @@ export class GroqHandler extends BaseHandler<GroqModel> {
       )
     }
 
-    return client.chat.completions.create(body)
+    return client.chat.completions.create(body, options)
   }
 }

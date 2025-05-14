@@ -5,6 +5,7 @@ import {
   CompletionParams,
   OpenAICompatibleModel,
   ProviderCompletionParams,
+  RequestOptions,
 } from '../chat/index.js'
 import {
   CompletionResponse,
@@ -59,7 +60,8 @@ export class OpenAICompatibleHandler extends BaseHandler<OpenAICompatibleModel> 
   }
 
   async create(
-    body: ProviderCompletionParams<'openai'>
+    body: ProviderCompletionParams<'openai'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
     // Uses the OPENAI_API_KEY environment variable, if the apiKey is not provided.
@@ -77,10 +79,10 @@ export class OpenAICompatibleHandler extends BaseHandler<OpenAICompatibleModel> 
     delete params.provider
 
     if (body.stream) {
-      const stream = await openai.chat.completions.create(body)
+      const stream = await openai.chat.completions.create(body, options)
       return streamOpenAI(stream)
     } else {
-      return openai.chat.completions.create(body)
+      return openai.chat.completions.create(body, options)
     }
   }
 }

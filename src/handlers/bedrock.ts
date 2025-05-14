@@ -22,6 +22,7 @@ import {
   CompletionParams,
   CompletionStreaming,
   ProviderCompletionParams,
+  RequestOptions,
 } from '../chat/index.js'
 import {
   CompletionResponse,
@@ -585,7 +586,8 @@ export class BedrockHandler extends BaseHandler<BedrockModel> {
   }
 
   async create(
-    body: ProviderCompletionParams<'bedrock'>
+    body: ProviderCompletionParams<'bedrock'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
 
@@ -672,12 +674,16 @@ export class BedrockHandler extends BaseHandler<BedrockModel> {
     if (body.stream === true) {
       const command = new ConverseStreamCommand(convertedParams)
       const created = getTimestamp()
-      const response = await client.send(command)
+      const response = await client.send(command, {
+        abortSignal: options.signal,
+      })
       return createCompletionResponseStreaming(response, body.model, created)
     } else {
       const command = new ConverseCommand(convertedParams)
       const created = getTimestamp()
-      const response = await client.send(command)
+      const response = await client.send(command, {
+        abortSignal: options.signal,
+      })
 
       const usage =
         response.usage &&

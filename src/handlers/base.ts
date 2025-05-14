@@ -1,4 +1,8 @@
-import { CompletionParams, LLMChatModel } from '../chat/index.js'
+import {
+  CompletionParams,
+  LLMChatModel,
+  RequestOptions,
+} from '../chat/index.js'
 import {
   CompletionResponse,
   ConfigOptions,
@@ -34,7 +38,8 @@ export abstract class BaseHandler<T extends LLMChatModel> {
   }
 
   abstract create(
-    body: CompletionParams
+    body: CompletionParams,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse>
 
   protected validateInputs(body: CompletionParams): void {

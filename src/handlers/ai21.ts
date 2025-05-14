@@ -3,6 +3,7 @@ import {
   CompletionParams,
   LLMChatModel,
   ProviderCompletionParams,
+  RequestOptions,
 } from '../chat/index.js'
 import {
   CompletionResponse,
@@ -215,7 +216,8 @@ export class AI21Handler extends BaseHandler<AI21Model> {
   }
 
   async create(
-    body: ProviderCompletionParams<'ai21'>
+    body: ProviderCompletionParams<'ai21'>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     this.validateInputs(body)
 
@@ -249,6 +251,7 @@ export class AI21Handler extends BaseHandler<AI21Model> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(params),
+        ...options,
       }
     )
 

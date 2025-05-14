@@ -82,6 +82,10 @@ export type CompletionParams = {
   [P in LLMProvider]: CompletionStreaming<P> | CompletionNonStreaming<P>
 }[LLMProvider]
 
+export type RequestOptions = {
+  signal?: AbortSignal | undefined | null
+}
+
 export class LLMCompletions {
   private opts: ConfigOptions
 
@@ -90,19 +94,23 @@ export class LLMCompletions {
   }
 
   create<P extends LLMProvider>(
-    body: CompletionNonStreaming<P>
+    body: CompletionNonStreaming<P>,
+    options?: RequestOptions
   ): Promise<CompletionResponse>
   create<P extends LLMProvider>(
-    body: CompletionStreaming<P>
+    body: CompletionStreaming<P>,
+    options?: RequestOptions
   ): Promise<StreamCompletionResponse>
   create<P extends LLMProvider>(
-    body: CompletionBase<P>
+    body: CompletionBase<P>,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse>
   create(
-    body: CompletionParams
+    body: CompletionParams,
+    options?: RequestOptions
   ): Promise<CompletionResponse | StreamCompletionResponse> {
     const handler = getHandler(body.provider, this.opts)
-    return handler.create(body)
+    return handler.create(body, options)
   }
 }
 
