@@ -569,16 +569,11 @@ export class AnthropicHandler extends BaseHandler<AnthropicModel> {
     const stream = typeof body.stream === 'boolean' ? body.stream : undefined
     const maxTokens = body.max_tokens ?? getDefaultMaxTokens(body.model)
 
-    if (
-      this.opts.baseURL === 'https://api.anthropic.com/v1' ||
-      this.opts.baseURL === 'https://api.anthropic.com/v1/'
-    ) {
-      this.opts.baseURL = 'https://api.anthropic.com'
-    }
-
     const client = new Anthropic({
       apiKey: getApiKey(this.opts.apiKey)!,
-      baseURL: this.opts.baseURL,
+      baseURL: !this.opts.baseURL.includes('https://api.anthropic.com')
+        ? this.opts.baseURL
+        : undefined,
       defaultHeaders: {
         'anthropic-dangerous-direct-browser-access': 'true',
         ...this.opts.defaultHeaders,

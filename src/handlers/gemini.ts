@@ -5,6 +5,7 @@ import {
   FunctionCallPart,
   FunctionCallingMode,
   FunctionDeclarationSchema,
+  RequestOptions as GeminiRequestOptions,
   GenerateContentCandidate,
   GenerateContentRequest,
   GenerateContentResult,
@@ -12,7 +13,6 @@ import {
   GoogleGenerativeAI,
   InlineDataPart,
   Part,
-  RequestOptions as GeminiRequestOptions,
   TextPart,
   Tool,
   ToolConfig,
@@ -497,7 +497,10 @@ export class GeminiHandler extends BaseHandler<GeminiModel> {
 
     // Create request options for custom baseURL and headers support
     const requestOptions: GeminiRequestOptions = {}
-    if (this.opts.baseURL) {
+    if (
+      this.opts.baseURL &&
+      !this.opts.baseURL.includes('https://generativelanguage.googleapis.com')
+    ) {
       requestOptions.baseUrl = this.opts.baseURL
     }
     if (this.opts.defaultHeaders) {

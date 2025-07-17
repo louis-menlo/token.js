@@ -87,6 +87,7 @@ export abstract class BaseHandler<T extends LLMChatModel> {
           for (const content of message.content) {
             if (
               content.type === 'image_url' &&
+              // @ts-expect-error model string
               !this.supportsImageMessages(body.model)
             ) {
               throw new InputError(
@@ -101,6 +102,7 @@ export abstract class BaseHandler<T extends LLMChatModel> {
     if (
       typeof body.n === 'number' &&
       body.n > 1 &&
+      // @ts-expect-error model string
       !this.supportsNGreaterThanOne(body.model)
     ) {
       throw new InputError(
@@ -109,6 +111,7 @@ export abstract class BaseHandler<T extends LLMChatModel> {
     }
 
     if (body.response_format?.type === 'json_object') {
+      // @ts-expect-error model string
       if (!this.supportsJSONMode(body.model)) {
         throw new InputError(
           `The model ${body.model} does not support the 'response_format' type 'json_object'.`
