@@ -1,23 +1,19 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import {
+  Candidate,
   Content,
-  EnhancedGenerateContentResponse,
   FinishReason,
-  FunctionCallPart,
-  FunctionCallingMode,
-  FunctionDeclarationSchema,
-  RequestOptions as GeminiRequestOptions,
-  GenerateContentCandidate,
-  GenerateContentRequest,
-  GenerateContentResult,
-  GenerateContentStreamResult,
-  GoogleGenerativeAI,
-  InlineDataPart,
+  FunctionCallingConfigMode,
+  GenerateContentParameters,
+  GenerateContentResponse,
+  GoogleGenAI,
+  HttpOptions,
   Part,
-  TextPart,
+  Schema,
   Tool,
   ToolConfig,
   UsageMetadata,
-} from '@google/generative-ai'
+} from '@google/genai'
 import { nanoid } from 'nanoid'
 import OpenAI from 'openai'
 import {
@@ -43,39 +39,6 @@ import {
   getTimestamp,
 } from './utils.js'
 
-// Google's `GenerateContentCandidate.content` field should be optional, but it's a required field
-// in Google's types. This field can be undefined if a content filter is triggered when the user
-// requests a JSON response via `response_format: { type: 'json_object'}`. The types below are
-// identical to Google's types except the `content` field is optional. Manually defining these types
-// is necessary to prevent this edge case from causing a bug in our SDK. The bug was caused by
-// 'gemini-1.5-pro' with the following prompt: "Generate a JSON that represents a person, with name
-// and age. Give a concise answer."
-type EnhancedResponseWithOptionalContent = Omit<
-  EnhancedGenerateContentResponse,
-  'candidates'
-> & {
-  candidates?: GenerateContentCandidateWithOptionalContent[]
-}
-type GenerateContentCandidateWithOptionalContent = Omit<
-  GenerateContentCandidate,
-  'content'
-> & {
-  content?: Content
-}
-type GenerateContentResultWithOptionalContent = Omit<
-  GenerateContentResult,
-  'response'
-> & {
-  response: EnhancedResponseWithOptionalContent
-}
-type GenerateContentStreamResultWithOptionalContent = Omit<
-  GenerateContentStreamResult,
-  'stream' | 'response'
-> & {
-  stream: AsyncGenerator<EnhancedResponseWithOptionalContent>
-  response: Promise<EnhancedResponseWithOptionalContent>
-}
-
 export const convertContentsToParts = async (
   contents: Array<ChatCompletionContentPart> | string | null | undefined,
   systemPrefix: string
@@ -95,7 +58,7 @@ export const convertContentsToParts = async (
       if (part.type === 'text') {
         return {
           text: `${systemPrefix}${part.text}`,
-        } as TextPart
+        } as Part
       } else if (part.type === 'image_url') {
         const imageData = await fetchThenParseImage(part.image_url.url)
         return {
@@ -103,7 +66,7 @@ export const convertContentsToParts = async (
             mimeType: imageData.mimeType,
             data: imageData.content,
           },
-        } satisfies InlineDataPart
+        } satisfies Part
       } else {
         throw new InputError(
           `Invalid content part type: ${
@@ -138,8 +101,8 @@ export const convertRole = (
 export const convertAssistantMessage = (
   message: OpenAI.Chat.Completions.ChatCompletionMessage
 ): Content => {
-  const parts: (FunctionCallPart | TextPart)[] = message.tool_calls
-    ? message.tool_calls.map((call): FunctionCallPart => {
+  const parts: Part[] = message.tool_calls
+    ? message.tool_calls.map((call): Part => {
         return {
           functionCall: {
             name: call.function.name,
@@ -278,7 +241,7 @@ export const convertFinishReason = (
 }
 
 export const convertToolCalls = (
-  candidate: GenerateContentCandidateWithOptionalContent
+  candidate: Candidate
 ): Array<ChatCompletionMessageToolCall> | undefined => {
   const toolCalls = candidate.content?.parts
     .filter((part) => part.functionCall !== undefined)
@@ -303,7 +266,7 @@ export const convertToolCalls = (
 }
 
 export const convertStreamToolCalls = (
-  candidate: GenerateContentCandidateWithOptionalContent
+  candidate: Candidate
 ): Array<ChatCompletionChunk.Choice.Delta.ToolCall> | undefined => {
   return convertToolCalls(candidate)?.map((toolCall, index) => {
     return {
@@ -314,7 +277,7 @@ export const convertStreamToolCalls = (
 }
 
 export const convertResponseMessage = (
-  candidate: GenerateContentCandidateWithOptionalContent
+  candidate: Candidate
 ): CompletionResponse['choices'][number]['message'] => {
   return {
     content: candidate.content?.parts.map((part) => part.text).join('') ?? null,
@@ -328,7 +291,7 @@ export const convertUsageData = (
   usageMetadata: UsageMetadata
 ): CompletionResponse['usage'] => {
   return {
-    completion_tokens: usageMetadata.candidatesTokenCount,
+    completion_tokens: usageMetadata.totalTokenCount,
     prompt_tokens: usageMetadata.promptTokenCount,
     total_tokens: usageMetadata.totalTokenCount,
   }
@@ -344,7 +307,7 @@ export const convertToolConfig = (
   if (typeof toolChoice === 'object') {
     return {
       functionCallingConfig: {
-        mode: FunctionCallingMode.ANY,
+        mode: FunctionCallingConfigMode.ANY,
         allowedFunctionNames: [toolChoice.function.name],
       },
     }
@@ -354,19 +317,19 @@ export const convertToolConfig = (
     case 'auto':
       return {
         functionCallingConfig: {
-          mode: FunctionCallingMode.AUTO,
+          mode: FunctionCallingConfigMode.AUTO,
         },
       }
     case 'none':
       return {
         functionCallingConfig: {
-          mode: FunctionCallingMode.NONE,
+          mode: FunctionCallingConfigMode.NONE,
         },
       }
     case 'required':
       return {
         functionCallingConfig: {
-          mode: FunctionCallingMode.ANY,
+          mode: FunctionCallingConfigMode.ANY,
         },
       }
     default:
@@ -374,8 +337,8 @@ export const convertToolConfig = (
         functionCallingConfig: {
           mode:
             tools && tools?.length > 0
-              ? FunctionCallingMode.AUTO
-              : FunctionCallingMode.NONE,
+              ? FunctionCallingConfigMode.AUTO
+              : FunctionCallingConfigMode.NONE,
         },
       }
   }
@@ -396,8 +359,7 @@ export const convertTools = (
           description: tool.function.description,
           // We can cast this directly to Google's type because they both use JSON Schema
           // OpenAI just uses a generic Record<string, unknown> type for this.
-          parameters: tool.function
-            .parameters as any as FunctionDeclarationSchema,
+          parameters: tool.function.parameters as any as Schema,
         },
       ],
     }
@@ -405,7 +367,7 @@ export const convertTools = (
 }
 
 export const convertResponse = async (
-  result: GenerateContentResultWithOptionalContent,
+  result: GenerateContentResponse,
   model: string,
   timestamp: number
 ): Promise<CompletionResponse> => {
@@ -415,7 +377,7 @@ export const convertResponse = async (
     created: timestamp,
     model,
     choices:
-      result.response.candidates?.map((candidate) => {
+      result.candidates?.map((candidate) => {
         return {
           index: candidate.index,
           finish_reason: candidate.finishReason
@@ -430,19 +392,19 @@ export const convertResponse = async (
           // There are also some other fields that Google returns that are not supported in the OpenAI format such as citations and safety ratings
         }
       }) ?? [],
-    usage: result.response.usageMetadata
-      ? convertUsageData(result.response.usageMetadata)
+    usage: result.usageMetadata
+      ? convertUsageData(result.usageMetadata)
       : undefined,
   }
 }
 
 async function* convertStreamResponse(
-  result: GenerateContentStreamResultWithOptionalContent,
+  result: AsyncGenerator<GenerateContentResponse, any, any>,
   model: string,
   timestamp: number
 ): StreamCompletionResponse {
-  for await (const chunk of result.stream) {
-    const text = chunk.text()
+  for await (const chunk of result) {
+    const text = chunk.text
     yield {
       id: null,
       object: 'chat.completion.chunk',
@@ -496,7 +458,7 @@ export class GeminiHandler extends BaseHandler<GeminiModel> {
     const stop = typeof body.stop === 'string' ? [body.stop] : body.stop
 
     // Create request options for custom baseURL and headers support
-    const requestOptions: GeminiRequestOptions = {}
+    const requestOptions: HttpOptions = {}
     if (
       this.opts.baseURL &&
       !this.opts.baseURL.includes('https://generativelanguage.googleapis.com')
@@ -504,50 +466,38 @@ export class GeminiHandler extends BaseHandler<GeminiModel> {
       requestOptions.baseUrl = this.opts.baseURL
     }
     if (this.opts.defaultHeaders) {
-      requestOptions.customHeaders = this.opts.defaultHeaders
+      requestOptions.headers = this.opts.defaultHeaders
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel(
-      {
-        model: body.model,
-        generationConfig: {
-          maxOutputTokens: body.max_tokens ?? undefined,
-          temperature: body.temperature ?? undefined,
-          topP: body.top_p ?? undefined,
-          stopSequences: stop ?? undefined,
-          candidateCount: body.n ?? undefined,
-          responseMimeType,
-        },
-        // Google also supports configurable safety settings which do not fit into the OpenAI format (this was an issue for us in the past, so we'll likely need to address it at some point)
-        // Google also supports cached content which does not fit into the OpenAI format
-      },
-      requestOptions
-    )
+    const gen = new GoogleGenAI({ apiKey, httpOptions: requestOptions })
 
     const { contents, systemInstruction } = await convertMessagesToContents(
       body.messages
     )
-    const params: GenerateContentRequest = {
+    const params: GenerateContentParameters = {
+      model: body.model,
       contents,
-      toolConfig: convertToolConfig(body.tool_choice, body.tools),
-      tools: convertTools(body.tools),
-      systemInstruction,
+      config: {
+        toolConfig: convertToolConfig(body.tool_choice, body.tools),
+        tools: convertTools(body.tools),
+        systemInstruction,
+        maxOutputTokens: body.max_tokens ?? undefined,
+        temperature: body.temperature ?? undefined,
+        topP: body.top_p ?? undefined,
+        stopSequences: stop ?? undefined,
+        candidateCount: body.n ?? undefined,
+        responseMimeType,
+        abortSignal: options?.signal,
+      },
     }
 
     const timestamp = getTimestamp()
 
     if (body.stream) {
-      const result = (await model.generateContentStream(
-        params,
-        options
-      )) as GenerateContentStreamResultWithOptionalContent
+      const result = await gen.models.generateContentStream(params) // options/
       return convertStreamResponse(result, body.model, timestamp)
     } else {
-      const result = (await model.generateContent(
-        params,
-        options
-      )) as GenerateContentResultWithOptionalContent
+      const result = await gen.models.generateContent(params)
       return convertResponse(result, body.model, timestamp)
     }
   }
