@@ -135,7 +135,7 @@ export const convertMessageToContent = async (
       try {
         parsedResponse = JSON.parse(toolContent)
       } catch {
-        parsedResponse = toolContent
+        parsedResponse = { result: toolContent, status: 'success' }
       }
       return {
         role: convertRole(message.role),
@@ -352,6 +352,35 @@ export const convertTools = (
   }
 
   return tools.map((tool) => {
+    let parameters = tool.function.parameters
+    if (parameters && typeof parameters === 'object') {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { required, properties, ...params } = parameters as Schema
+      Object.entries(properties).forEach(([key, value]) => {
+        if (typeof value === 'object') {
+          const { exclusiveMinimum, exclusiveMaximum, format, type, ...rest } =
+            value as unknown as {
+              exclusiveMinimum?: number
+              exclusiveMaximum?: number
+              [key: string]: any
+            }
+          properties[key] = {
+            ...(exclusiveMinimum ? { minimum: exclusiveMinimum } : {}),
+            ...(exclusiveMaximum ? { maximum: exclusiveMaximum } : {}),
+            ...(format === 'enum' ||
+            (format === 'date-time' && type === 'string')
+              ? { format }
+              : {}),
+            type,
+            ...rest,
+          }
+        }
+      })
+      parameters = {
+        properties,
+        ...params,
+      }
+    }
     return {
       functionDeclarations: [
         {
@@ -359,7 +388,7 @@ export const convertTools = (
           description: tool.function.description,
           // We can cast this directly to Google's type because they both use JSON Schema
           // OpenAI just uses a generic Record<string, unknown> type for this.
-          parameters: tool.function.parameters as any as Schema,
+          parameters,
         },
       ],
     }
