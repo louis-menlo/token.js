@@ -531,16 +531,6 @@ export class AnthropicHandler extends BaseHandler<AnthropicModel> {
             ) {
               logImageDetailWarning = true
             }
-
-            if (
-              body.model === 'claude-instant-1.2' ||
-              body.model === 'claude-2.0' ||
-              body.model === 'claude-2.1'
-            ) {
-              throw new InputError(
-                `Model '${body.model}' does not support images. Remove any images from the prompt or use Claude version 3 or later.`
-              )
-            }
           }
         }
       }
