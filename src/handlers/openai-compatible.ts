@@ -72,6 +72,7 @@ export class OpenAICompatibleHandler extends BaseHandler<OpenAICompatibleModel> 
       ...this.opts,
       apiKey,
       dangerouslyAllowBrowser: true,
+      fetch: 'fetch' in this.opts ? (this.opts.fetch as any) : globalThis.fetch,
     })
 
     // We have to delete the provider field because it's not a valid parameter for the OpenAI API.
