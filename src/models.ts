@@ -11,6 +11,9 @@ export const TableDisplayNames = {
 export const models = {
   openai: {
     models: [
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
       'gpt-4.5-preview',
       'gpt-4.5-preview-2025-02-27',
       'gpt-4.1',
@@ -36,6 +39,9 @@ export const models = {
     ] as const,
     supportsCompletion: true,
     supportsStreaming: [
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
       'gpt-4.1',
       'gpt-4.1-2025-04-14',
       'gpt-4.5-preview',
@@ -60,6 +66,9 @@ export const models = {
       'o3-mini',
     ] as const,
     supportsJSON: [
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
       'gpt-4.1',
       'gpt-4.1-2025-04-14',
       'gpt-4.5-preview',
@@ -79,6 +88,9 @@ export const models = {
       'o3-mini',
     ] as const,
     supportsImages: [
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
       'gpt-4.1',
       'gpt-4.1-2025-04-14',
       'gpt-4.5-preview',
@@ -94,6 +106,9 @@ export const models = {
       'gpt-4-1106-preview',
     ] as const,
     supportsToolCalls: [
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-5-nano',
       'gpt-4.1',
       'gpt-4.1-2025-04-14',
       'gpt-4.5-preview',
@@ -295,6 +310,11 @@ export const models = {
   },
   mistral: {
     models: [
+      'devstral-small-2507',
+      'magistral-small-2507',
+      'magistral-small-2506',
+      'mistral-small-2506',
+      'mistral-small-2503',
       'open-mistral-7b',
       'mistral-tiny-2312',
       'open-mixtral-8x7b',
@@ -313,6 +333,11 @@ export const models = {
     ] as const,
     supportsCompletion: true,
     supportsStreaming: [
+      'devstral-small-2507',
+      'magistral-small-2507',
+      'magistral-small-2506',
+      'mistral-small-2506',
+      'mistral-small-2503',
       'open-mistral-7b',
       'mistral-tiny-2312',
       'open-mixtral-8x7b',
@@ -344,7 +369,12 @@ export const models = {
       'codestral-2405',
       'codestral-mamba-2407',
     ] as const,
-    supportsImages: [] as const,
+    supportsImages: [
+      'magistral-small-2507',
+      'magistral-small-2506',
+      'mistral-small-2506',
+      'mistral-small-2503',
+    ] as const,
     supportsToolCalls: [
       'open-mixtral-8x22b',
       'open-mixtral-8x22b-2404',
