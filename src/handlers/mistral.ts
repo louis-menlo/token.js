@@ -13,7 +13,6 @@ import {
   ChatCompletionMessageParam,
   ChatCompletionMessageToolCall,
 } from 'openai/resources/index'
-import { ChatCompletionContentPartText } from 'openai/src/resources/index.js'
 
 import {
   CompletionParams,
@@ -75,15 +74,39 @@ export const convertMessages = (
         tool_calls: message.tool_calls ?? null,
       }
     } else if (message.role === 'user') {
-      const content =
-        typeof message.content === 'string'
-          ? message.content
-          : message.content?.map(
-              (m) => (m as ChatCompletionContentPartText).text
-            )
+      if (typeof message.content === 'string') {
+        return {
+          role: message.role,
+          content: message.content,
+        }
+      }
+
+      // Handle multimodal content (text + images)
+      // Cast to any to bypass TypeScript restrictions for vision content
+      const contentParts = message.content
+        ?.map((part) => {
+          if (part.type === 'text') {
+            return {
+              type: 'text',
+              text: part.text,
+            }
+          } else if (part.type === 'image_url') {
+            return {
+              type: 'image_url',
+              image_url:
+                typeof part.image_url === 'string'
+                  ? part.image_url
+                  : part.image_url.url,
+            }
+          }
+          // Skip unsupported content types
+          return null
+        })
+        .filter(Boolean)
+
       return {
         role: message.role,
-        content,
+        content: contentParts as any, // Cast to bypass type restrictions for vision support
       }
     } else {
       throw new Error('Function messages are deprecated.')

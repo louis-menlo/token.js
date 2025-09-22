@@ -82,21 +82,20 @@ export abstract class BaseHandler<T extends LLMChatModel> {
         )
       }
 
-      if (message.role === 'user') {
-        if (Array.isArray(message.content)) {
-          for (const content of message.content) {
-            if (
-              content.type === 'image_url' &&
-              // @ts-expect-error model string
-              !this.supportsImageMessages(body.model)
-            ) {
-              throw new InputError(
-                `Detected an image in the 'messages' array, but the following model does not support images: ${body.model}`
-              )
-            }
-          }
-        }
-      }
+      // if (message.role === 'user') {
+      //   if (Array.isArray(message.content)) {
+      //     for (const content of message.content) {
+      //       if (
+      //         content.type === 'image_url'
+      //         && !this.supportsImageMessages(body.model)
+      //       ) {
+      //         throw new InputError(
+      //           `Detected an image in the 'messages' array, but the following model does not support images: ${body.model}`
+      //         )
+      //       }
+      //     }
+      //   }
+      // }
     }
 
     if (
