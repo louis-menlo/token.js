@@ -566,6 +566,7 @@ export class AnthropicHandler extends BaseHandler<AnthropicModel> {
         : undefined,
       defaultHeaders: {
         'anthropic-dangerous-direct-browser-access': 'true',
+        'anthropic-version': '2023-06-01',
         ...this.opts.defaultHeaders,
       },
     })
